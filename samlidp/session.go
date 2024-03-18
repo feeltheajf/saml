@@ -5,8 +5,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
-	"text/template"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
