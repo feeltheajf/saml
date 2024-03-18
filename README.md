@@ -1,8 +1,6 @@
 # SAML
 
-[![](https://godoc.org/github.com/crewjam/saml?status.svg)](http://godoc.org/github.com/crewjam/saml)
-
-![Build Status](https://github.com/crewjam/saml/workflows/Presubmit/badge.svg)
+[![](https://godoc.org/github.com/feeltheajf/saml?status.svg)](http://godoc.org/github.com/feeltheajf/saml)
 
 Package saml contains a partial implementation of the SAML standard in golang.
 SAML is a standard for identity federation, i.e. either allowing a third party to authenticate your users or allowing third parties to rely on us to authenticate their users.
@@ -36,9 +34,9 @@ func main() {
 }
 ```
 
-Each service provider must have an self-signed X.509 key pair established. You can generate your own with something like this:
+Each service provider must have a self-signed X.509 key pair established. You can generate your own with something like this:
 
-    openssl req -x509 -newkey rsa:2048 -keyout myservice.key -out myservice.cert -days 365 -nodes -subj "/CN=myservice.example.com"
+    openssl req -x509 -newkey rsa:4096 -keyout myservice.key -out myservice.cert -days 365 -nodes -subj "/CN=myservice.example.com"
 
 We will use `samlsp.Middleware` to wrap the endpoint we want to protect. Middleware provides both an `http.Handler` to serve the SAML specific URLs **and** a set of wrappers to require the user to be logged in. We also provide the URL where the service provider can fetch the metadata from the IDP at startup. In our case, we'll use [samltest.id](https://samltest.id/), an identity provider designed for testing.
 
@@ -54,7 +52,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/crewjam/saml/samlsp"
+	"github.com/feeltheajf/saml/samlsp"
 )
 
 func hello(w http.ResponseWriter, r *http.Request) {
@@ -154,4 +152,8 @@ The SAML specification is a collection of PDFs (sadly):
 
 ## Security Issues
 
-Please do not report security issues in the issue tracker. Rather, please contact me directly at ross@kndr.org ([PGP Key `78B6038B3B9DFB88`](https://keybase.io/crewjam)). If your issue is *not* a security issue, please use the issue tracker so other contributors can help.
+Please do not report security issues in the issue tracker. Rather, please contact me directly at [feeltheajf@gmail.com](mailto:feeltheajf@gmail.com). If your issue is _not_ a security issue, please use the issue tracker so other contributors can help.
+
+## Thanks
+
+Special thanks to Ross Kinder ([@crewjam](https://github.com/crewjam)), developer of the original [crewjam/saml](https://github.com/crewjam/saml) library.
