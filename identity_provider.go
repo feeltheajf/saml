@@ -108,6 +108,7 @@ type IdentityProvider struct {
 	SignatureMethod         string
 	ValidDuration           *time.Duration
 	ResponseTemplate        *template.Template
+	InsecureSkipVerifyIssue bool
 }
 
 // Metadata returns the metadata structure for this identity provider.
@@ -432,9 +433,11 @@ func (req *IdpAuthnRequest) Validate() error {
 		}
 	}
 
-	if req.Request.IssueInstant.Add(MaxIssueDelay).Before(req.Now) {
-		return fmt.Errorf("request expired at %s",
-			req.Request.IssueInstant.Add(MaxIssueDelay))
+	if !req.IDP.InsecureSkipVerifyIssue {
+		if req.Request.IssueInstant.Add(MaxIssueDelay).Before(req.Now) {
+			return fmt.Errorf("request expired at %s",
+				req.Request.IssueInstant.Add(MaxIssueDelay))
+		}
 	}
 	if req.Request.Version != "2.0" {
 		return fmt.Errorf("expected SAML request version 2.0 got %v", req.Request.Version)
