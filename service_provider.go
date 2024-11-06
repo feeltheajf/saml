@@ -11,7 +11,6 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"html/template"
 	"io"
 	"net/http"
 	"net/url"
@@ -522,14 +521,7 @@ func (r *AuthnRequest) Post(relayState string) []byte {
 	}
 	encodedReqBuf := base64.StdEncoding.EncodeToString(reqBuf)
 
-	tmpl := template.Must(template.New("saml-post-form").Parse(`` +
-		`<form method="post" action="{{.URL}}" id="SAMLRequestForm">` +
-		`<input type="hidden" name="SAMLRequest" value="{{.SAMLRequest}}" />` +
-		`<input type="hidden" name="RelayState" value="{{.RelayState}}" />` +
-		`<input id="SAMLSubmitButton" type="submit" value="Submit" />` +
-		`</form>` +
-		`<script>document.getElementById('SAMLSubmitButton').style.visibility="hidden";` +
-		`document.getElementById('SAMLRequestForm').submit();</script>`))
+	tmpl := defaultRequestTemplate
 	data := struct {
 		URL         string
 		SAMLRequest string
@@ -1282,14 +1274,7 @@ func (r *LogoutRequest) Post(relayState string) []byte {
 	}
 	encodedReqBuf := base64.StdEncoding.EncodeToString(reqBuf)
 
-	tmpl := template.Must(template.New("saml-post-form").Parse(`` +
-		`<form method="post" action="{{.URL}}" id="SAMLRequestForm">` +
-		`<input type="hidden" name="SAMLRequest" value="{{.SAMLRequest}}" />` +
-		`<input type="hidden" name="RelayState" value="{{.RelayState}}" />` +
-		`<input id="SAMLSubmitButton" type="submit" value="Submit" />` +
-		`</form>` +
-		`<script>document.getElementById('SAMLSubmitButton').style.visibility="hidden";` +
-		`document.getElementById('SAMLRequestForm').submit();</script>`))
+	tmpl := defaultRequestTemplate
 	data := struct {
 		URL         string
 		SAMLRequest string
@@ -1396,14 +1381,7 @@ func (r *LogoutResponse) Post(relayState string) []byte {
 	}
 	encodedReqBuf := base64.StdEncoding.EncodeToString(reqBuf)
 
-	tmpl := template.Must(template.New("saml-post-form").Parse(`` +
-		`<form method="post" action="{{.URL}}" id="SAMLResponseForm">` +
-		`<input type="hidden" name="SAMLResponse" value="{{.SAMLResponse}}" />` +
-		`<input type="hidden" name="RelayState" value="{{.RelayState}}" />` +
-		`<input id="SAMLSubmitButton" type="submit" value="Submit" />` +
-		`</form>` +
-		`<script>document.getElementById('SAMLSubmitButton').style.visibility="hidden";` +
-		`document.getElementById('SAMLResponseForm').submit();</script>`))
+	tmpl := defaultResponseTemplate
 	data := struct {
 		URL          string
 		SAMLResponse string

@@ -107,6 +107,7 @@ type IdentityProvider struct {
 	AssertionMaker          AssertionMaker
 	SignatureMethod         string
 	ValidDuration           *time.Duration
+	ResponseTemplate        *template.Template
 }
 
 // Metadata returns the metadata structure for this identity provider.
@@ -929,15 +930,10 @@ func (req *IdpAuthnRequest) WriteResponse(w http.ResponseWriter) error {
 		return err
 	}
 
-	tmpl := template.Must(template.New("saml-post-form").Parse(`<html>` +
-		`<form method="post" action="{{.URL}}" id="SAMLResponseForm">` +
-		`<input type="hidden" name="SAMLResponse" value="{{.SAMLResponse}}" />` +
-		`<input type="hidden" name="RelayState" value="{{.RelayState}}" />` +
-		`<input id="SAMLSubmitButton" type="submit" value="Continue" />` +
-		`</form>` +
-		`<script>document.getElementById('SAMLSubmitButton').style.visibility='hidden';</script>` +
-		`<script>document.getElementById('SAMLResponseForm').submit();</script>` +
-		`</html>`))
+	tmpl := req.IDP.ResponseTemplate
+	if tmpl == nil {
+		tmpl = defaultResponseTemplate
+	}
 
 	buf := bytes.NewBuffer(nil)
 	if err := tmpl.Execute(buf, form); err != nil {
