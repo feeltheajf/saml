@@ -44,6 +44,9 @@ const (
 	PersistentNameIDFormat   NameIDFormat = "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"
 )
 
+// DefaultNameIDFormats are set in IdentityProvider's metadata
+var DefaultNameIDFormats = []NameIDFormat{TransientNameIDFormat}
+
 // SignatureVerifier verifies a signature
 //
 // Can be implemented in order to override ServiceProvider's default

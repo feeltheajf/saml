@@ -109,6 +109,7 @@ type IdentityProvider struct {
 	ValidDuration           *time.Duration
 	ResponseTemplate        *template.Template
 	InsecureSkipVerifyIssue bool
+	NameIDFormats			[]NameIDFormat
 }
 
 // Metadata returns the metadata structure for this identity provider.
@@ -120,6 +121,11 @@ func (idp *IdentityProvider) Metadata() *EntityDescriptor {
 		validDuration = *idp.ValidDuration
 	} else {
 		validDuration = DefaultValidDuration
+	}
+
+	nameIDFormats = idp.NameIDFormats
+	if nameIDFormats == nil {
+		nameIDFormats = DefaultNameIDFormats
 	}
 
 	ed := &EntityDescriptor{
@@ -160,7 +166,7 @@ func (idp *IdentityProvider) Metadata() *EntityDescriptor {
 							},
 						},
 					},
-					NameIDFormats: []NameIDFormat{NameIDFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:transient")},
+					NameIDFormats: nameIDFormats,
 				},
 				SingleSignOnServices: []Endpoint{
 					{
@@ -763,7 +769,7 @@ func (DefaultAssertionMaker) MakeAssertion(req *IdpAuthnRequest, session *Sessio
 		notOnOrAfterAfter = notBefore.Add(MaxIssueDelay)
 	}
 
-	nameIDFormat := "urn:oasis:names:tc:SAML:2.0:nameid-format:transient"
+	nameIDFormat := TransientNameIDFormat
 
 	if session.NameIDFormat != "" {
 		nameIDFormat = session.NameIDFormat
