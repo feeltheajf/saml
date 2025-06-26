@@ -98,6 +98,7 @@ type IdentityProvider struct {
 	Signer                  crypto.Signer
 	Logger                  logger.Interface
 	Certificate             *x509.Certificate
+	ExtraCertificates       []*x509.Certificate
 	Intermediates           []*x509.Certificate
 	MetadataURL             url.URL
 	SSOURL                  url.URL
@@ -114,8 +115,6 @@ type IdentityProvider struct {
 
 // Metadata returns the metadata structure for this identity provider.
 func (idp *IdentityProvider) Metadata() *EntityDescriptor {
-	certStr := base64.StdEncoding.EncodeToString(idp.Certificate.Raw)
-
 	var validDuration time.Duration
 	if idp.ValidDuration != nil {
 		validDuration = *idp.ValidDuration
@@ -128,6 +127,39 @@ func (idp *IdentityProvider) Metadata() *EntityDescriptor {
 		nameIDFormats = DefaultNameIDFormats
 	}
 
+	var keyDescriptors []KeyDescriptor
+	for _, cert := range append([]*x509.Certificate{idp.Certificate}, idp.ExtraCertificates...) {
+		certStr := base64.StdEncoding.EncodeToString(cert.Raw)
+		keyDescriptors = append(keyDescriptors, 
+			KeyDescriptor{
+				Use: "signing",
+				KeyInfo: KeyInfo{
+					X509Data: X509Data{
+						X509Certificates: []X509Certificate{
+							{Data: certStr},
+						},
+					},
+				},
+			},
+			KeyDescriptor{
+				Use: "encryption",
+				KeyInfo: KeyInfo{
+					X509Data: X509Data{
+						X509Certificates: []X509Certificate{
+							{Data: certStr},
+						},
+					},
+				},
+				EncryptionMethods: []EncryptionMethod{
+					{Algorithm: "http://www.w3.org/2001/04/xmlenc#aes128-cbc"},
+					{Algorithm: "http://www.w3.org/2001/04/xmlenc#aes192-cbc"},
+					{Algorithm: "http://www.w3.org/2001/04/xmlenc#aes256-cbc"},
+					{Algorithm: "http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p"},
+				},
+			},
+		)
+	}
+
 	ed := &EntityDescriptor{
 		EntityID:      idp.MetadataURL.String(),
 		ValidUntil:    TimeNow().Add(validDuration),
@@ -137,34 +169,7 @@ func (idp *IdentityProvider) Metadata() *EntityDescriptor {
 				SSODescriptor: SSODescriptor{
 					RoleDescriptor: RoleDescriptor{
 						ProtocolSupportEnumeration: "urn:oasis:names:tc:SAML:2.0:protocol",
-						KeyDescriptors: []KeyDescriptor{
-							{
-								Use: "signing",
-								KeyInfo: KeyInfo{
-									X509Data: X509Data{
-										X509Certificates: []X509Certificate{
-											{Data: certStr},
-										},
-									},
-								},
-							},
-							{
-								Use: "encryption",
-								KeyInfo: KeyInfo{
-									X509Data: X509Data{
-										X509Certificates: []X509Certificate{
-											{Data: certStr},
-										},
-									},
-								},
-								EncryptionMethods: []EncryptionMethod{
-									{Algorithm: "http://www.w3.org/2001/04/xmlenc#aes128-cbc"},
-									{Algorithm: "http://www.w3.org/2001/04/xmlenc#aes192-cbc"},
-									{Algorithm: "http://www.w3.org/2001/04/xmlenc#aes256-cbc"},
-									{Algorithm: "http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p"},
-								},
-							},
-						},
+						KeyDescriptors: keyDescriptors,
 					},
 					NameIDFormats: nameIDFormats,
 				},
