@@ -38,13 +38,14 @@ type Session struct {
 	NameIDFormat string
 	SubjectID    string
 
-	Groups                []string
-	UserName              string
-	UserEmail             string
-	UserCommonName        string
-	UserSurname           string
-	UserGivenName         string
-	UserScopedAffiliation string
+	Groups                 []string
+	UserName               string
+	UserEmail              string
+	UserCommonName         string
+	UserSurname            string
+	UserGivenName          string
+	UserScopedAffiliation  string
+	EduPersonPrincipalName string `json:",omitempty"`
 
 	CustomAttributes []Attribute
 }
@@ -102,6 +103,7 @@ type IdentityProvider struct {
 	Intermediates           []*x509.Certificate
 	MetadataURL             url.URL
 	SSOURL                  url.URL
+	LoginURL                url.URL
 	LogoutURL               url.URL
 	ServiceProviderProvider ServiceProviderProvider
 	SessionProvider         SessionProvider
@@ -130,7 +132,7 @@ func (idp *IdentityProvider) Metadata() *EntityDescriptor {
 	var keyDescriptors []KeyDescriptor
 	for _, cert := range append([]*x509.Certificate{idp.Certificate}, idp.ExtraCertificates...) {
 		certStr := base64.StdEncoding.EncodeToString(cert.Raw)
-		keyDescriptors = append(keyDescriptors, 
+		keyDescriptors = append(keyDescriptors,
 			KeyDescriptor{
 				Use: "signing",
 				KeyInfo: KeyInfo{
@@ -169,7 +171,7 @@ func (idp *IdentityProvider) Metadata() *EntityDescriptor {
 				SSODescriptor: SSODescriptor{
 					RoleDescriptor: RoleDescriptor{
 						ProtocolSupportEnumeration: "urn:oasis:names:tc:SAML:2.0:protocol",
-						KeyDescriptors: keyDescriptors,
+						KeyDescriptors:             keyDescriptors,
 					},
 					NameIDFormats: nameIDFormats,
 				},
@@ -188,7 +190,7 @@ func (idp *IdentityProvider) Metadata() *EntityDescriptor {
 	}
 
 	if idp.LogoutURL.String() != "" {
-		ed.IDPSSODescriptors[0].SSODescriptor.SingleLogoutServices = []Endpoint{
+		ed.IDPSSODescriptors[0].SingleLogoutServices = []Endpoint{
 			{
 				Binding:  HTTPRedirectBinding,
 				Location: idp.LogoutURL.String(),
@@ -678,12 +680,32 @@ func (DefaultAssertionMaker) MakeAssertion(req *IdpAuthnRequest, session *Sessio
 
 	if session.UserEmail != "" {
 		attributes = append(attributes, Attribute{
+			FriendlyName: "mail",
+			Name:         "urn:oid:0.9.2342.19200300.100.1.3",
+			NameFormat:   "urn:oasis:names:tc:SAML:2.0:attrname-format:uri",
+			Values: []AttributeValue{{
+				Type:  "xs:string",
+				Value: session.UserEmail,
+			}},
+		})
+	}
+	if session.EduPersonPrincipalName != "" || session.UserEmail != "" {
+		value := session.EduPersonPrincipalName
+		if value == "" {
+			// We used to set eduPersonPrincipalName (urn:oid:1.3.6.1.4.1.5923.1.1.1.6)
+			// to the value of session.UserEmail. It is more correct to set
+			// mail (urn:oid:0.9.2342.19200300.100.1.3). To avoid breaking things,
+			// we preserve the former behavior.
+			value = session.UserEmail
+		}
+
+		attributes = append(attributes, Attribute{
 			FriendlyName: "eduPersonPrincipalName",
 			Name:         "urn:oid:1.3.6.1.4.1.5923.1.1.1.6",
 			NameFormat:   "urn:oasis:names:tc:SAML:2.0:attrname-format:uri",
 			Values: []AttributeValue{{
 				Type:  "xs:string",
-				Value: session.UserEmail,
+				Value: value,
 			}},
 		})
 	}
@@ -724,7 +746,7 @@ func (DefaultAssertionMaker) MakeAssertion(req *IdpAuthnRequest, session *Sessio
 
 	if session.UserScopedAffiliation != "" {
 		attributes = append(attributes, Attribute{
-			FriendlyName: "uid",
+			FriendlyName: "scopedAffiliation",
 			Name:         "urn:oid:1.3.6.1.4.1.5923.1.1.1.9",
 			NameFormat:   "urn:oasis:names:tc:SAML:2.0:attrname-format:uri",
 			Values: []AttributeValue{{
